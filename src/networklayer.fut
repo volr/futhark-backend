@@ -17,10 +17,16 @@ module array  = import "/futlib/array"
 
 module NetworkLayer (real: real) :
   { type t = real.t
-    type layer [i] [j] = { biases: [j]real.t, weights: [j][i]real.t, rng: rng_engine.rng }
-    type layer_modify [i] [j] = { biases: *[j]real.t, weights: *[j][i]real.t, rng: rng_engine.rng }
+    type layer [i] [j] = { biases: [j]t, weights: [j][i]t, rng: rng_engine.rng }
+    type layer_modify [i] [j] = { biases: *[j]t, weights: *[j][i]t, rng: rng_engine.rng }
+    val zero: t
+    val one: t
+    val matvecmul [n] [m] : (xss: [n][m]t) -> (ys: [m]t) -> [m]t
     val network_layer : rng_engine.rng -> (from: i32) -> (to: i32) -> layer [from] [to]
-    val feedforward_layer [i] [j] : layer [i] [j] -> [i]real.t -> [j]real.t
+    val feedforward_layer [i] [j] : layer [i] [j] -> [i]t -> [j]t
+    val rnd_permute 't [n] : rng_engine.rng -> [n]t -> (rng_engine.rng, [n]t)
+    val sigmoid : (x:t) -> t
+    val sigmoid_prime : (x:t) -> t
   } = {
 
   module Linalg = linalg(real)
@@ -37,23 +43,23 @@ module NetworkLayer (real: real) :
   let one = real.from_fraction 1 1
   let zero = real.floor (real.from_fraction 1 2)
 
-  let dotprod [n] (xs: [n]real.t) (ys: [n]real.t): real.t =
+  let dotprod [n] (xs: [n]t) (ys: [n]t): t =
     let zs = map (real.*) xs ys
     let a = zs[0]
     let zero = (a real.+one)real.*(a real.+one) real.- a real.*a real.- a real.- a real.- one  -- avoid fusion
     in reduce (real.+) zero zs
 
-  let matvecmul [n] [m] (xss: [n][m]real.t) (ys: [m]real.t) =
+  let matvecmul [n] [m] (xss: [n][m]t) (ys: [m]t) =
     map (dotprod ys) xss
 
   let stddist : ndist.distribution = {mean=zero,stddev=one}
 
   -- The sigmoid function
-  let sigmoid (x:real.t) =
+  let sigmoid (x:t) =
     one real./ (one real.+ real.exp(real.negate x))
 
   -- Derivative of sigmoid
-  let sigmoid_prime (x:real.t) =
+  let sigmoid_prime (x:t) =
     let s = sigmoid x
     in s real.* (one real.- s)
 
@@ -79,20 +85,19 @@ module NetworkLayer (real: real) :
     let (rng,is) = rnd_perm rng n
     in unsafe(rng,map (\i -> a[i]) is)
 
-  let randn (rng:rng) (n:i32) : (rng,*[n]real.t) =
+  let randn (rng:rng) (n:i32) : (rng,*[n]t) =
     let rngs = rng_engine.split_rng n rng
     let pairs = map (\rng -> ndist.rand stddist rng) rngs
     let (rngs',a) = unzip pairs
     in (rng_engine.join_rng rngs', a)
 
-  let randn_bad (rng:rng) (n:i32) : (rng,*[n]real.t) =
+  let randn_bad (rng:rng) (n:i32) : (rng,*[n]t) =
     (rng,
      replicate n (zero))
 
    -- Network layer
-
-   type layer [i] [j] = { biases: [j]real.t, weights: [j][i]real.t, rng: rng_engine.rng }
-   type layer_modify [i] [j] = { biases: *[j]real.t, weights: *[j][i]real.t, rng: rng_engine.rng }
+   type layer [i] [j] = { biases: [j]t, weights: [j][i]t, rng: rng_engine.rng }
+   type layer_modify [i] [j] = { biases: *[j]t, weights: *[j][i]t, rng: rng_engine.rng }
 
    let network_layer (rng:rng) (prev_sz:i32) (sz:i32) : layer [prev_sz] [sz] =
      let (rng,biases) = randn rng sz
@@ -101,7 +106,7 @@ module NetworkLayer (real: real) :
      let weights = reshape (sz,prev_sz) weights_flat'
      in {rng = rng, biases = biases, weights = weights}
 
-   let feedforward_layer [i] [j] (layer: layer [i] [j]) (arg:[i]real.t): [j]real.t =
+   let feedforward_layer [i] [j] (layer: layer [i] [j]) (arg:[i]t): [j]t =
      let t = matvecmul layer.weights arg
      in map (\b t -> sigmoid (t real.+ b)) layer.biases t
 
