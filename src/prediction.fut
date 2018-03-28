@@ -22,6 +22,7 @@ module N3 = N.Network3({
   let size1 = 2
   let size2 = 10
   let output = 2
+  let learning_rate = 0.5
 })
 
 let main [n] [m] (x: [n][m]N.t) (y: [n]i32) : N.t =

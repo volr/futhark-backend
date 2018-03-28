@@ -33,6 +33,7 @@ module NeuralNetwork (real: real) = {
     val size1: i32
     val size2: i32
     val output: i32
+    val learning_rate: t
   }
 
   module Network3 (N: Network3) : Network = {
@@ -169,14 +170,13 @@ module NeuralNetwork (real: real) = {
       let epochs = 10
       let lmbda = L.zero
       let mini_batch_size = 20
-      let eta : t = real.from_fraction 1 2
 
       let data = zip training_x (map convert training_y)
       -- split rng
       let layer1 = L.network_layer rng N.size1 N.size2
       let layer2 = L.network_layer layer1.rng N.size2 N.output
       -- train
-      let n = sgd (rng, (layer1, layer2), data, epochs, mini_batch_size, eta, lmbda)
+      let n = sgd (rng, (layer1, layer2), data, epochs, mini_batch_size, N.learning_rate, lmbda)
       -- test
       let predictions = map (\d -> predict(feedforward n d)) test_x
       let cmps = map (\p r -> i32.bool(p==r)) predictions test_y
