@@ -1,4 +1,6 @@
 *
+!/**/
 !*.*
+*.c
 data/*.txt
 .ipynb_checkpoints
