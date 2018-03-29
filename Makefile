@@ -1,12 +1,11 @@
 PYTHON=$(shell which python3)
-EXAMPLES=examples/
 SOURCES=src/
 BIN=bin/
 SAMPLES=1000
 FEATURES=2
 
 .PHONY: all maze.data compile-examples
-all: compile compile-examples
+all: compile compile-examples maze.data
 
 maze.data:
 	@cd data; ${PYTHON} generate_maze.py ${SAMPLES} # Generate $SAMPLES random mazes of depth 1
