@@ -8,15 +8,16 @@
 ---------------------------------------
 
 import "neuralnetwork"
+import "prediction"
 
-module Predict (N: NeuralNetwork) = {
-
-  let training_test [n] [m] (x: [n][m]N.t) (y: [n]i32) : N.t =
-    let split = i32.f64(f64.floor(f64.i32(n) * 0.8))
-    let training_x = x[0:split]
-    let training_y = y[0:split]
-    let test_x = x[split:n]
-    let test_y = y[split:n]
-    in N.run (training_x, training_y, test_x, test_y)
-
+module N = Network3 (f32) {
+  let size1 = 2
+  let size2 = 10
+  let output = 2
+  let learning_rate = 0.5
 }
+
+module P = Predict (N)
+
+let main [n] [m] (x: [n][m]N.t) (y: [n]i32) : N.t =
+  P.training_test x y
