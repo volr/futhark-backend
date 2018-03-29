@@ -9,7 +9,7 @@ Heavily inspired by [Martin Elsmans port](https://github.com/melsman/neural-netw
 ### Requirements
 
 * Python > 3.x: https://www.python.org/
-* Futhark > 0.4.0: https://github.com/diku-dk/futhark
+* Futhark >= 0.4.0: https://github.com/diku-dk/futhark
 * OpenCL (used by Futhark): https://www.khronos.org/opencl/
 
 To execute the examples:
